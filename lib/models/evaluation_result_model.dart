@@ -1,3 +1,5 @@
+import 'field_feedback_model.dart';
+
 enum RiskLevel { bajo, medio, alto }
 
 class EvaluationResult {
@@ -10,7 +12,7 @@ class EvaluationResult {
   final String descripcion;
   final List<String> recomendaciones;
   final DateTime fechaResultado;
-  final List<dynamic>? fieldFeedback; // lista de FieldFeedback (runtime), no serializada completa todavía
+  final List<FieldFeedback>? fieldFeedback; // lista de FieldFeedback (runtime), no serializada completa todavía
 
   EvaluationResult({
     this.id,
@@ -81,11 +83,11 @@ class EvaluationResult {
   String get riskLevelDisplay {
     switch (nivelRiesgo) {
       case RiskLevel.bajo:
-        return 'Bajo';
+        return 'BAJO';
       case RiskLevel.medio:
-        return 'Moderado';
+        return 'MODERADO';
       case RiskLevel.alto:
-        return 'Alto';
+        return 'ALTO';
     }
   }
 

@@ -28,4 +28,37 @@ class FieldFeedback {
         return AppColors.errorRed;
     }
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'fieldKey': fieldKey,
+      'title': title,
+      'valueDisplay': valueDisplay,
+      'message': message,
+      'status': status.toString().split('.').last,
+    };
+  }
+
+  factory FieldFeedback.fromJson(Map<String, dynamic> json) {
+    return FieldFeedback(
+      fieldKey: json['fieldKey'] ?? '',
+      title: json['title'] ?? '',
+      valueDisplay: json['valueDisplay'] ?? '',
+      message: json['message'] ?? '',
+      status: _parseFeedbackStatus(json['status']),
+    );
+  }
+
+  static FeedbackStatus _parseFeedbackStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'good':
+        return FeedbackStatus.good;
+      case 'warning':
+        return FeedbackStatus.warning;
+      case 'bad':
+        return FeedbackStatus.bad;
+      default:
+        return FeedbackStatus.warning;
+    }
+  }
 }

@@ -9,7 +9,7 @@ import '../widgets/custom_dropdown.dart';
 import '../services/evaluation_service.dart'; // aún usado para isLoading pero no se crea resultado aquí
 import '../services/auth_service.dart';
 import '../models/evaluation_draft.dart';
-import '../widgets/top_navigation_menu.dart';
+// TopNavigationMenu removed - tabs no longer needed in evaluation
 import '../widgets/user_menu_button.dart';
 import '../utils/constants.dart';
 
@@ -145,10 +145,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'aTensión',
@@ -164,10 +161,6 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           ),
           const UserMenuButton(),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(52),
-          child: TopNavigationMenu(activeTab: 'evaluacion'),
-        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -183,7 +176,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   child: Text(
                     'Ingrese sus datos',
                     style: TextStyle(
-                      color: isDark ? Colors.white : Colors.black,
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -207,7 +200,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                             Text(
                               'Edad',
                               style: TextStyle(
-                                color: isDark ? Colors.grey[400] : const Color.fromARGB(255, 160, 160, 160),
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : const Color.fromARGB(255, 160, 160, 160),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 fontStyle: FontStyle.italic,
@@ -218,16 +211,16 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.cardBackground : const Color.fromARGB(255, 230, 230, 230),
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardBackground : const Color.fromARGB(255, 230, 230, 230),
                                 borderRadius: BorderRadius.circular(8),
-                                border: isDark 
+                                border: Theme.of(context).brightness == Brightness.dark 
                                   ? Border.all(color: Colors.grey[600]!, width: 1)
                                   : null,
                               ),
                               child: Text(
                                 '${user.edad} años',
                                 style: TextStyle(
-                                  color: isDark ? Colors.grey[300] : const Color.fromARGB(255, 100, 100, 100),
+                                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : const Color.fromARGB(255, 100, 100, 100),
                                   fontSize: 16,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -245,7 +238,7 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                             Text(
                               'Sexo',
                               style: TextStyle(
-                                color: isDark ? Colors.grey[400] : const Color.fromARGB(255, 160, 160, 160),
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : const Color.fromARGB(255, 160, 160, 160),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                                 fontStyle: FontStyle.italic,
@@ -256,16 +249,16 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.cardBackground : const Color.fromARGB(255, 230, 230, 230),
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardBackground : const Color.fromARGB(255, 230, 230, 230),
                                 borderRadius: BorderRadius.circular(8),
-                                border: isDark 
+                                border: Theme.of(context).brightness == Brightness.dark 
                                   ? Border.all(color: Colors.grey[600]!, width: 1)
                                   : null,
                               ),
                               child: Text(
                                 user.sexo,
                                 style: TextStyle(
-                                  color: isDark ? Colors.grey[300] : const Color.fromARGB(255, 100, 100, 100),
+                                  color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : const Color.fromARGB(255, 100, 100, 100),
                                   fontSize: 16,
                                   fontStyle: FontStyle.italic,
                                 ),

@@ -1,3 +1,5 @@
+import 'evaluation_result_model.dart';
+
 class Evaluation {
   final String? id;
   final String userId;
@@ -12,6 +14,8 @@ class Evaluation {
   final String diabetes;
   final String cigarrilloElectronico;
   final DateTime fechaEvaluacion;
+  final String? riskLevel;      // ← DEBE EXISTIR
+  final double? probability;    // ← DEBE EXISTIR
 
   Evaluation({
     this.id,
@@ -27,6 +31,8 @@ class Evaluation {
     required this.diabetes,
     required this.cigarrilloElectronico,
     required this.fechaEvaluacion,
+    this.riskLevel,      // ← DEBE ESTAR AQUÍ
+    this.probability,    // ← DEBE ESTAR AQUÍ
   });
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
@@ -44,6 +50,8 @@ class Evaluation {
       diabetes: json['diabetes'] ?? '',
       cigarrilloElectronico: json['cigarrillo_electronico'] ?? '',
       fechaEvaluacion: DateTime.parse(json['fecha_evaluacion']),
+      riskLevel: json['risk_level'],
+      probability: json['probability']?.toDouble(),
     );
   }
 
@@ -62,6 +70,8 @@ class Evaluation {
       'diabetes': diabetes,
       'cigarrillo_electronico': cigarrilloElectronico,
       'fecha_evaluacion': fechaEvaluacion.toIso8601String(),
+      'risk_level': riskLevel,
+      'probability': probability,
     };
   }
 
@@ -77,5 +87,22 @@ class Evaluation {
     if (imcValue < 25) return 'Peso normal';
     if (imcValue < 30) return 'Sobrepeso';
     return 'Obesidad';
+  }
+
+  RiskLevel get riskLevelEnum {
+    switch (riskLevel?.toLowerCase()) {
+      case 'bajo':
+      case 'low':
+        return RiskLevel.bajo;
+      case 'medio':
+      case 'moderado':
+      case 'medium':
+        return RiskLevel.medio;
+      case 'alto':
+      case 'high':
+        return RiskLevel.alto;
+      default:
+        return RiskLevel.bajo;
+    }
   }
 }

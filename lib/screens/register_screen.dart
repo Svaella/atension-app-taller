@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import '../utils/colors.dart';
 import '../utils/constants.dart';
@@ -18,15 +19,15 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController(text: 'Prueba');
-  final _apellidosController = TextEditingController(text: 'Test Usuario');
-  final _fechaNacimientoController = TextEditingController(text: '01/01/2000');
-  final _correoController = TextEditingController(text: 'prueba@email.com');
-  final _passwordController = TextEditingController(text: 'test1234');
+  final _nombreController = TextEditingController();
+  final _apellidosController = TextEditingController();
+  final _fechaNacimientoController = TextEditingController();
+  final _correoController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  String _selectedSexo = 'Masculino';
+  String _selectedSexo = '';
   DateTime? _selectedDate = DateTime(2000, 1, 1);
-  bool _acceptTerms = true;
+  bool _acceptTerms = false;
   bool _isPasswordVisible = false;
 
   @override
@@ -72,6 +73,133 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _showTermsAndConditionsModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkGray,
+          title: const Text(
+             '📄 Términos y Condiciones',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                   '''
+Última actualización: 20 de octubre de 2025
+
+1. Aceptación de los términos
+
+Al registrarse, acceder o utilizar la aplicación aTensión, el usuario acepta estos Términos y Condiciones. Si no está de acuerdo con alguna parte de los mismos, debe abstenerse de utilizar la aplicación.
+
+2. Descripción del servicio
+
+aTensión es una aplicación móvil diseñada para realizar una valoración preliminar del riesgo de desarrollar Hipertensión Arterial. La aplicación utiliza datos ingresados por el usuario (como peso, altura, edad, hábitos, entre otros) y un modelo de Machine Learning basado en el conjunto de datos BRFSS.
+
+• El resultado proporcionado no constituye un diagnóstico médico y debe ser interpretado únicamente como una orientación informativa.
+
+• Para obtener una valoración médica definitiva, se recomienda consultar con un profesional de la salud.
+
+3. Registro y uso de la cuenta
+
+• El usuario deberá proporcionar información veraz, completa y actualizada durante el registro.
+
+• El acceso a la cuenta es personal e intransferible.
+
+• El usuario es responsable de mantener la confidencialidad de sus credenciales de acceso.
+
+4. Uso adecuado de la aplicación
+
+El usuario se compromete a utilizar la aplicación únicamente con fines informativos y personales, absteniéndose de:
+
+• Ingresar información falsa o de terceros sin consentimiento.
+
+• Utilizar la aplicación con fines comerciales, ilegales o que puedan afectar su funcionamiento.
+
+• Modificar, copiar o distribuir el contenido o código de la aplicación sin autorización previa.
+
+5. Protección de datos personales
+
+aTensión cumple con la Ley de Protección de Datos Personales vigente. Los datos ingresados se utilizan exclusivamente para:
+
+• Calcular el nivel de riesgo de hipertensión arterial.
+
+• Generar estadísticas o métricas anónimas para la mejora del servicio.
+
+La aplicación no comparte, vende ni divulga información personal a terceros sin el consentimiento del usuario.
+Para más detalles, consulte la sección “Uso de datos personales” dentro de la aplicación.
+
+6. Limitación de responsabilidad
+
+El equipo desarrollador de aTensión no se hace responsable por:
+
+• Decisiones médicas o de salud tomadas con base en los resultados de la aplicación.
+
+• Daños directos o indirectos derivados del uso o imposibilidad de uso del sistema.
+
+• Errores de ingreso de datos por parte del usuario o interrupciones técnicas.
+
+7. Actualizaciones del servicio
+
+• La aplicación puede ser actualizada periódicamente para incorporar mejoras, correcciones o nuevas funciones.
+
+• El usuario acepta que dichas actualizaciones pueden realizarse automáticamente.
+
+8. Derechos de propiedad intelectual
+
+Todos los elementos de diseño, logotipos, textos, código fuente y contenidos de aTensión son propiedad de su desarrollador y están protegidos por las leyes de propiedad intelectual vigentes.
+
+              ''',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Cerrar',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _acceptTerms = true;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Aceptar',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -110,22 +238,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       apellidos: _apellidosController.text.trim(),
       fechaNacimiento: _selectedDate!,
       sexo: _selectedSexo,
-      correo: _correoController.text.trim(),
+      email: _correoController.text.trim(),
     );
 
     final authService = Provider.of<AuthService>(context, listen: false);
     
     try {
-      await authService.register(user, _passwordController.text);
-      
+      final result = await authService.register(user, _passwordController.text);  // ← NUEVO
+    
       if (mounted) {
-  context.go('/evaluation-form');
+        if (result['success']) {  // ← NUEVO: Verificar éxito
+          // Registro exitoso - redirigir
+          context.go('/evaluation-form');
+        } else {
+          // Registro falló - mostrar error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Error al registrarse'),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al registrarse: ${e.toString()}'),
+            content: Text('Error de conexión: ${e.toString()}'),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -138,15 +277,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              // fallback si no hay stack de navegación
-              context.go('/');
-            }
-          },
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  // fallback si no hay stack de navegación
+                  context.go('/welcome');
+                }
+              },
         ),
         title: const Text(
           'Registrarse',
@@ -206,6 +345,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _nombreController,
                     labelText: 'Nombre',
+                    hintText: 'Ingresa tu nombre',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingresa tu nombre';
@@ -219,6 +359,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _apellidosController,
                     labelText: 'Apellidos',
+                    hintText: 'Ingresa tus apellidos',
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingresa tus apellidos';
@@ -266,6 +407,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _correoController,
                     labelText: 'Correo',
+                    hintText: 'example@gmail.com',
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -283,6 +425,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   CustomTextField(
                     controller: _passwordController,
                     labelText: 'Contraseña',
+                    hintText: '********',
                     obscureText: !_isPasswordVisible,
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -319,24 +462,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _acceptTerms = value ?? false;
                           });
                         },
-                        activeColor: AppColors.primaryRed,
+                        activeColor: Colors.blue,
                         checkColor: Colors.white,
                       ),
                       Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _acceptTerms = !_acceptTerms;
-                            });
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.only(top: 12.0),
-                            child: Text(
-                              'Acepto términos y condiciones',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 12.0),
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'Acepta ',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'términos y condiciones',
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = _showTermsAndConditionsModal,
+                                ),
+                              ],
                             ),
                           ),
                         ),

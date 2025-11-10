@@ -9,58 +9,102 @@ import '../services/evaluation_service.dart';
 import '../services/auth_service.dart';
 import '../models/evaluation_result_model.dart';
 import '../widgets/user_menu_button.dart';
+import '../utils/risk_utils.dart';
 
-class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
-
-  @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends State<HistoryScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadHistory();
-    });
-  }
-
-  Future<void> _loadHistory() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final evaluationService = Provider.of<EvaluationService>(context, listen: false);
-    
-    if (authService.currentUser?.id != null) {
-      try {
-        await evaluationService.getEvaluationHistory(authService.currentUser!.id!);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al cargar historial: ${e.toString()}'),
-              backgroundColor: AppColors.errorRed,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Color _getRiskColor(RiskLevel riskLevel) {
-    switch (riskLevel) {
-      case RiskLevel.bajo:
-        return AppColors.riskLow;
-      case RiskLevel.medio:
-        return AppColors.riskMedium;
-      case RiskLevel.alto:
-        return AppColors.riskHigh;
-    }
-  }
+class HistoryScreen extends StatelessWidget {
+  final bool embedded;
+  const HistoryScreen({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
+    // Construye el contenido del historial
+    final content = SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Aquí puedes agregar el contenido que ya tenías en el body de Scaffold
+            Expanded(
+              child: Consumer<EvaluationService>(
+                builder: (context, evaluationService, child) {
+                  if (evaluationService.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryRed),
+                      ),
+                    );
+                  }
+
+                  if (evaluationService.evaluations.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.history,
+                            size: 80,
+                            color: AppColors.textSecondary,
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            'No tienes evaluaciones aún',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 18,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Realiza tu primera evaluación para ver tu historial',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: evaluationService.evaluations.length,
+                          itemBuilder: (context, index) {
+                            final evaluation = evaluationService.evaluations[index];
+                            
+                            // ✅ CORREGIDO: Usar riskLevel REAL del backend
+                            final riskLevel = evaluation.riskLevelEnum;
+                            
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: EvaluationCard(
+                                date: DateFormat('dd/MM/yyyy').format(evaluation.fechaEvaluacion),
+                                riskLevel: riskLevel,
+                                onTap: () {
+                                  _showEvaluationDetail(context, evaluation, riskLevel);
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (embedded) return content;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'aTensión',
@@ -81,81 +125,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: TopNavigationMenu(activeTab: 'historial'),
         ),
       ),
-      body: Consumer<EvaluationService>(
-        builder: (context, evaluationService, child) {
-          if (evaluationService.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryRed),
-              ),
-            );
-          }
-
-          if (evaluationService.evaluations.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 80,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'No tienes evaluaciones aún',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Realiza tu primera evaluación para ver tu historial',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: evaluationService.evaluations.length,
-                  itemBuilder: (context, index) {
-                    final evaluation = evaluationService.evaluations[index];
-                    
-                    // Para demo, simulamos diferentes niveles de riesgo
-                    final riskLevels = [RiskLevel.bajo, RiskLevel.medio, RiskLevel.alto];
-                    final riskLevel = riskLevels[index % riskLevels.length];
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: EvaluationCard(
-                        date: DateFormat('dd/MM/yyyy').format(evaluation.fechaEvaluacion),
-                        riskLevel: riskLevel,
-                        onTap: () {
-                          // TODO: Navegar a detalle de evaluación específica
-                          _showEvaluationDetail(context, evaluation, riskLevel);
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-              
-              // (Eliminado) Tabs de navegación inferiores duplicadas: ahora se usa TopNavigationMenu superior
-            ],
-          );
-        },
-      ),
+      body: content,
     );
   }
 
@@ -220,7 +190,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: _getRiskColor(riskLevel),
+                        color: getRiskColor(riskLevel),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(

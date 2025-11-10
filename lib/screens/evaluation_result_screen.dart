@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // <-- ADD
 import '../utils/colors.dart';
 import '../utils/constants.dart';
-import '../widgets/custom_button.dart';
+// import '../widgets/custom_button.dart'; // <-- REMOVE (no usado)
 import '../widgets/risk_gauge.dart';
 import '../widgets/info_card.dart';
 import '../services/evaluation_service.dart';
 import '../services/auth_service.dart';
 import '../models/evaluation_result_model.dart';
-import '../widgets/top_navigation_menu.dart';
+// TopNavigationMenu removed from this screen to hide tabs on result view
 import '../models/field_feedback_model.dart';
 import '../widgets/user_menu_button.dart';
+// import '../services/onboarding_service.dart'; // <-- REMOVE (no usado)
 
 class EvaluationResultScreen extends StatefulWidget {
   const EvaluationResultScreen({super.key});
@@ -81,10 +82,6 @@ class _EvaluationResultScreenState extends State<EvaluationResultScreen> {
           ),
           const UserMenuButton(),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(52),
-          child: TopNavigationMenu(activeTab: 'evaluacion'),
-        ),
       ),
       body: Consumer<EvaluationService>(
         builder: (context, evaluationService, child) {
@@ -293,32 +290,23 @@ class _EvaluationResultScreenState extends State<EvaluationResultScreen> {
                   const SizedBox(height: 40),
                   
                   // Botones de acción
-                  SizedBox(
-                    width: double.infinity,
-                    child: CustomButton(
-                      text: 'Ver Historial',
-                      onPressed: () => context.go('/history'),
-                      backgroundColor: AppColors.primaryRed,
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final result = context.read<EvaluationService>().latestResult!;
+                    final String risk = result.nivelRiesgo.name; // 'bajo' | 'medio' | 'alto'
+                    context.go('/risk-guide', extra: risk);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryRed,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    child: CustomButton(
-                      text: 'Nueva Evaluación',
-                      onPressed: () {
-                        evaluationService.clearLatestResult();
-                        context.go('/evaluation-form');
-                      },
-                      backgroundColor: Colors.transparent,
-                      borderColor: AppColors.primaryRed,
-                      textColor: AppColors.primaryRed,
-                    ),
-                  ),
-                  
-                  // (Eliminado) Tabs inferiores duplicadas: se usa TopNavigationMenu superior
+                  child: const Text('Siguiente'),
+                ),
+              ),
                 ],
               ),
             ),
@@ -328,4 +316,28 @@ class _EvaluationResultScreenState extends State<EvaluationResultScreen> {
     );
   }
 
+}
+
+// Extrae el nivel de riesgo desde cualquier resultado (Map o modelo)
+String extractRisk(dynamic result) {
+  if (result == null) return 'bajo';
+  try {
+    // acceso dinámico a posibles nombres
+    final d = result as dynamic;
+    final raw = (d.nivelRiesgo ??
+            d.riskLevel ??
+            d.risk_level ??
+            d.nivel_riesgo ??
+            d.riesgo ??
+            (d.toJson != null ? (d.toJson() as Map)['nivelRiesgo'] : null) ??
+            (d.toJson != null ? (d.toJson() as Map)['riskLevel'] : null) ??
+            (d.toJson != null ? (d.toJson() as Map)['risk_level'] : null) ??
+            (d.toJson != null ? (d.toJson() as Map)['nivel_riesgo'] : null))
+        ?.toString()
+        .toLowerCase();
+    if (raw == null || raw.isEmpty) return 'bajo';
+    return raw;
+  } catch (_) {
+    return 'bajo';
+  }
 }

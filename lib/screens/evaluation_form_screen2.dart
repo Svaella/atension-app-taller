@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../utils/colors.dart';
 import '../widgets/custom_button.dart';
@@ -8,82 +8,51 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_dropdown.dart';
 import '../services/auth_service.dart';
 import '../services/evaluation_service.dart';
-import '../widgets/top_navigation_menu.dart';
+// TopNavigationMenu removed - tabs no longer needed in evaluation
 import '../widgets/user_menu_button.dart';
+import '../models/evaluation_draft.dart';
+import '../models/evaluation_model.dart'; // ← AÑADIR
 
-class EvaluationFormScreen extends StatefulWidget {
-  const EvaluationFormScreen({super.key});
+class EvaluationFormStep2Screen extends StatefulWidget {
+  final EvaluationDraft draft;
+  
+  const EvaluationFormStep2Screen({
+    super.key,
+    required this.draft,
+  });
 
   @override
-  State<EvaluationFormScreen> createState() => _EvaluationFormScreenState();
+  State<EvaluationFormStep2Screen> createState() => _EvaluationFormStep2ScreenState();
 }
 
-class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
+class _EvaluationFormStep2ScreenState extends State<EvaluationFormStep2Screen> {
   final _formKey = GlobalKey<FormState>();
-  final _pesoController = TextEditingController();
-  final _alturaController = TextEditingController();
   final _diasEstresController = TextEditingController();
 
-  final String _controlaConsumoSal = '';
-  final String _consumoAlcohol = '';
-  final String _habitoTabaquismo = '';
+  String _habitoTabaquismo = '';
   String _actividadFisica = '';
   String _colesterolAlto = '';
   String _diabetes = '';
   String _cigarrilloElectronico = '';
 
-  bool _dialogShown = false; // Evitar que se abra más de una vez si rebuild ocurre
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowInstructions());
-  }
-
-  Future<void> _maybeShowInstructions() async {
-    if (_dialogShown) return; // seguridad
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeen = prefs.getBool('has_seen_evaluation_instructions') ?? false;
-    if (hasSeen) return; // No mostrar nuevamente
-    _dialogShown = true;
-    await showDialog(
-      // ignore: use_build_context_synchronously
-      context: context,
-      barrierDismissible: false, // Obligamos a pulsar el botón
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.primaryRed,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   void dispose() {
-    _pesoController.dispose();
-    _alturaController.dispose();
     _diasEstresController.dispose();
     super.dispose();
   }
 
   Future<void> _submitEvaluation() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor completa todos los campos requeridos'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
 
-    if (_controlaConsumoSal.isEmpty ||
-        _consumoAlcohol.isEmpty ||
-        _habitoTabaquismo.isEmpty ||
+    if (_habitoTabaquismo.isEmpty ||
         _actividadFisica.isEmpty ||
         _colesterolAlto.isEmpty ||
         _diabetes.isEmpty ||
@@ -103,26 +72,58 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
     if (authService.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error: Usuario no autenticado'),
+          content: Text('Debes iniciar sesión para realizar una evaluación'),
           backgroundColor: AppColors.errorRed,
         ),
       );
       return;
     }
 
-    // (Datos ingresados ignorados en modo demo)
+    try {
+      debugPrint('🔵 Iniciando evaluación...');
+      
+      // Importar modelo Evaluation
+      final evaluation = Evaluation(
+        userId: authService.currentUser!.id ?? '',
+        peso: widget.draft.peso,
+        altura: widget.draft.altura,
+        controlaConsumoSal: widget.draft.controlaConsumoSal,
+        consumoAlcohol: widget.draft.consumoAlcohol,
+        habitoTabaquismo: (_habitoTabaquismo == 'Fumador actual' || _habitoTabaquismo == 'Fumador Ocasional') ? 'Si' : 'No',
+        diasEstres: int.parse(_diasEstresController.text),
+        actividadFisica: _actividadFisica == 'Si' ? 'Si' : 'No',
+        colesterolAlto: _colesterolAlto == 'Si' ? 'Si' : 'No',
+        diabetes: _diabetes == 'Si' ? 'Si' : 'No',
+        cigarrilloElectronico: (_cigarrilloElectronico == 'Todos los días' || _cigarrilloElectronico == 'Algunos días') ? 'Si' : 'No',
+        fechaEvaluacion: DateTime.now(),
+      );
 
-  // MODO DEMO con IMC dinámico usando peso y altura ingresados
-  final peso = double.tryParse(_pesoController.text.trim());
-  final altura = double.tryParse(_alturaController.text.trim());
-  evaluationService.setDummyResult(pesoKg: peso, alturaCm: altura);
-    if (mounted) context.go('/evaluation-result');
+      debugPrint('📦 Evaluación creada: peso=${evaluation.peso}, altura=${evaluation.altura}');
+
+      // Llamar al servicio (intenta backend, fallback a simulación)
+      final result = await evaluationService.createEvaluation(evaluation);
+
+      debugPrint('✅ Resultado recibido: ${result.nivelRiesgo}');
+
+      if (mounted) {
+        context.go('/evaluation-result');
+      }
+    } catch (e) {
+      debugPrint('❌ Error en evaluación: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al realizar la evaluación: ${e.toString()}'),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text(
           'aTensión',
@@ -138,10 +139,6 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
           ),
           const UserMenuButton(),
         ],
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(52),
-          child: TopNavigationMenu(activeTab: 'evaluacion'),
-        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -151,7 +148,39 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              
+                // Título del paso 2
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    'Información adicional',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Hábito de tabaquismo
+                CustomDropdown<String>(
+                  labelText: '¿Cuál es su hábito de tabaquismo?',
+                  value: _habitoTabaquismo.isEmpty ? null : _habitoTabaquismo,
+                  items: const [
+                    DropdownMenuItem(value: 'No fuma', child: Text('No fuma')),
+                    DropdownMenuItem(value: 'Ex fumador', child: Text('Ex fumador')),
+                    DropdownMenuItem(value: 'Fumador Ocasional', child: Text('Fumador ocasional')),
+                    DropdownMenuItem(value: 'Fumador actual', child: Text('Fumador actual')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _habitoTabaquismo = value ?? '';
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 20),
 
                 // Sufrió de estrés, ansiedad o depresión (últimos 30 días)
                 CustomTextField(
@@ -244,18 +273,33 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
 
                 const SizedBox(height: 40),
 
-                // Botón continuar
-                Consumer<EvaluationService>(
-                  builder: (context, evaluationService, child) {
-                    return SizedBox(
-                      width: double.infinity,
+                // Botones de navegación
+                Row(
+                  children: [
+                    // Botón volver
+                    Expanded(
+                      flex: 1,
                       child: CustomButton(
-                        text: 'Continuar',
-                        onPressed: _submitEvaluation,
-                        isLoading: evaluationService.isLoading,
+                        text: 'Volver',
+                        onPressed: () => context.pop(),
+                        backgroundColor: Colors.grey[600]!,
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(width: 16),
+                    // Botón continuar
+                    Expanded(
+                      flex: 2,
+                      child: Consumer<EvaluationService>(
+                        builder: (context, evaluationService, child) {
+                          return CustomButton(
+                            text: 'Finalizar',
+                            onPressed: _submitEvaluation,
+                            isLoading: evaluationService.isLoading,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 20),

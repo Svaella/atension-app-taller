@@ -6,6 +6,7 @@ import '../utils/constants.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../services/auth_service.dart';
+import '../services/bp_service.dart'; // nuevo
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,8 +17,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'prueba@email.com');
-  final _passwordController = TextEditingController(text: 'test1234');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
   @override
@@ -31,21 +32,34 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authService = Provider.of<AuthService>(context, listen: false);
-    
+    final bpService = Provider.of<BPService>(context, listen: false); // nuevo
+
     try {
-      await authService.login(
+      final result = await authService.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      
+
       if (mounted) {
-  context.go('/evaluation-form');
+        if (result['success']) {
+          await bpService.fetch(); // precarga registros
+          if (!mounted) return;
+          context.go('/splash');
+        } else {
+          // Login falló - mostrar error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Error al iniciar sesión'),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al iniciar sesión: ${e.toString()}'),
+            content: Text('Error de conexión: ${e.toString()}'),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -56,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -63,8 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              // fallback si no hay stack de navegación
-              context.go('/');
+              context.go('/welcome');
             }
           },
         ),
@@ -76,155 +90,171 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.darkBackground, Color(0xFF2D3748)],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  
-                  // Logo y título
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primaryRed,
-                        ),
-                        child: const Icon(
-                          Icons.favorite,
-                          size: 32,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        Constants.appName,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 60),
-                  
-                  // Campos de formulario
-                  CustomTextField(
-                    controller: _emailController,
-                    labelText: 'Correo',
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu correo';
-                      }
-                      if (!RegExp(Constants.emailPattern).hasMatch(value)) {
-                        return 'Ingresa un correo válido';
-                      }
-                      return null;
-                    },
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  CustomTextField(
-                    controller: _passwordController,
-                    labelText: 'Contraseña',
-                    obscureText: !_isPasswordVisible,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: AppColors.darkGray,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor ingresa tu contraseña';
-                      }
-                      return null;
-                    },
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // ¿Olvidaste tu contraseña?
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => context.go('/password-reset'),
-                      child: const Text(
-                        '¿Olvidaste tu contraseña? Haz click aquí',
-                        style: TextStyle(
-                          color: AppColors.primaryRed,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Botón de iniciar sesión
-                  Consumer<AuthService>(
-                    builder: (context, authService, child) {
-                      return SizedBox(
-                        width: double.infinity,
-                        child: CustomButton(
-                          text: 'Iniciar Sesión',
-                          onPressed: _handleLogin,
-                          isLoading: authService.isLoading,
-                        ),
-                      );
-                    },
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // ¿Aún no tienes una cuenta?
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        '¿Aún no tienes una cuenta? ',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      GestureDetector(
-                        onTap: () => context.go('/register'),
-                        child: const Text(
-                          'Regístrate',
-                          style: TextStyle(
-                            color: AppColors.primaryRed,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const Spacer(),
-                ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Container(
+            height: constraints.maxHeight,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [AppColors.darkBackground, Color(0xFF2D3748)],
               ),
             ),
-          ),
-        ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom -
+                        16,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 40),
+                        
+                        // Logo y título
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primaryRed,
+                              ),
+                              child: const Icon(
+                                Icons.favorite,
+                                size: 32,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              Constants.appName,
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 60),
+                        
+                        CustomTextField(
+                          controller: _emailController,
+                          labelText: 'Correo',
+                          hintText: 'example@gmail.com',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor ingresa tu correo';
+                            }
+                            if (!RegExp(Constants.emailPattern).hasMatch(value)) {
+                              return 'Ingresa un correo válido';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        CustomTextField(
+                          controller: _passwordController,
+                          labelText: 'Contraseña',
+                          hintText: '********',
+                          obscureText: !_isPasswordVisible,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                              color: AppColors.darkGray,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor ingresa tu contraseña';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => context.go('/password-reset'),
+                            child: const Text(
+                              '¿Olvidaste tu contraseña? Haz click aquí',
+                              style: TextStyle(
+                                color: AppColors.primaryRed,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 40),
+                        
+                        Consumer<AuthService>(
+                          builder: (context, authService, child) {
+                            return SizedBox(
+                              width: double.infinity,
+                              child: CustomButton(
+                                text: 'Iniciar Sesión',
+                                onPressed: _handleLogin,
+                                isLoading: authService.isLoading,
+                              ),
+                            );
+                          },
+                        ),
+                        
+                        const SizedBox(height: 30),
+                        
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              '¿Aún no tienes una cuenta? ',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                            GestureDetector(
+                              onTap: () => context.go('/register'),
+                              child: const Text(
+                                'Regístrate',
+                                style: TextStyle(
+                                  color: AppColors.primaryRed,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

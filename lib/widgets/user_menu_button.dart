@@ -83,7 +83,7 @@ class UserMenuButton extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                user?.correo ?? 'correo@ejemplo.com',
+                                user?.email ?? 'correo@ejemplo.com',
                                 style: TextStyle(
                                   color: themeService.isDarkTheme ? Colors.white70 : Colors.black54,
                                   fontSize: 14,

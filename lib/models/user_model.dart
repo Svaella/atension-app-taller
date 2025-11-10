@@ -4,7 +4,7 @@ class User {
   final String apellidos;
   final DateTime fechaNacimiento;
   final String sexo;
-  final String correo;
+  final String email;
 
   User({
     this.id,
@@ -12,17 +12,17 @@ class User {
     required this.apellidos,
     required this.fechaNacimiento,
     required this.sexo,
-    required this.correo,
+    required this.email,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id']?.toString(),
-      nombre: json['nombre'] ?? '',
-      apellidos: json['apellidos'] ?? '',
-      fechaNacimiento: DateTime.parse(json['fecha_nacimiento']),
-      sexo: json['sexo'] ?? '',
-      correo: json['correo'] ?? '',
+      nombre: json['first_name'] ?? json['nombre'] ?? '',        // ← Cambio aquí
+      apellidos: json['last_name'] ?? json['apellidos'] ?? '',   // ← Cambio aquí  
+      fechaNacimiento: DateTime.parse(json['birth_date'] ?? json['fecha_nacimiento']), // ← Cambio aquí
+      sexo: json['gender'] ?? json['sexo'] ?? '',                // ← Cambio aquí
+      email: json['email'] ?? '',
     );
   }
 
@@ -33,7 +33,7 @@ class User {
       'apellidos': apellidos,
       'fecha_nacimiento': fechaNacimiento.toIso8601String(),
       'sexo': sexo,
-      'correo': correo,
+      'email': email,
     };
   }
 
@@ -53,7 +53,7 @@ class User {
     String? apellidos,
     DateTime? fechaNacimiento,
     String? sexo,
-    String? correo,
+    String? email,
   }) {
     return User(
       id: id ?? this.id,
@@ -61,7 +61,9 @@ class User {
       apellidos: apellidos ?? this.apellidos,
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
       sexo: sexo ?? this.sexo,
-      correo: correo ?? this.correo,
+      email: email ?? this.email,
     );
   }
+
+  String get fullName => '$nombre $apellidos';
 }
