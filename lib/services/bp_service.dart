@@ -85,7 +85,8 @@ class BPService extends ChangeNotifier {
         body: json.encode({
           'systolic': sys,
           'diastolic': dia,
-          'taken_at': takenAt.toIso8601String(),
+          // Enviar siempre en UTC
+          'taken_at': takenAt.toUtc().toIso8601String(),
         }),
       );
       debugPrint('POST /pressures -> ${res.statusCode} ${res.body}');

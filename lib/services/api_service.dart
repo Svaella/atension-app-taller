@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -54,10 +55,13 @@ class ApiService {
 
       return _handleResponse(response);
     } on SocketException {
-      throw ApiException('Error de conexión. Verifica tu conexión a internet.');
+      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+    } on TimeoutException {
+      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
     } catch (e) {
       debugPrint('❌ Exception en GET: $e');
-      throw ApiException('Error inesperado: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
     }
   }
 
@@ -114,42 +118,13 @@ class ApiService {
       }
     } on SocketException {
       debugPrint('🔌 Error de conexión');
-      throw ApiException('Error de conexión. Verifica tu conexión a internet.');
+      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+    } on TimeoutException {
+      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
     } catch (e) {
       debugPrint('❌ Exception en POST: $e');
       if (e is ApiException) rethrow;
-      throw ApiException('Error inesperado: $e');
-    }
-  }
-
-  Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
-    try {
-      final response = await http.put(
-        Uri.parse('${Constants.baseUrl}$endpoint'),
-        headers: _headers,
-        body: json.encode(data),
-      );
-
-      return _handleResponse(response);
-    } on SocketException {
-      throw ApiException('Error de conexión. Verifica tu conexión a internet.');
-    } catch (e) {
-      throw ApiException('Error inesperado: $e');
-    }
-  }
-
-  Future<dynamic> delete(String endpoint) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('${Constants.baseUrl}$endpoint'),
-        headers: _headers,
-      );
-
-      return _handleResponse(response);
-    } on SocketException {
-      throw ApiException('Error de conexión. Verifica tu conexión a internet.');
-    } catch (e) {
-      throw ApiException('Error inesperado: $e');
+      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
     }
   }
 
@@ -176,10 +151,13 @@ class ApiService {
       return _handleResponse(response);
     } on SocketException catch (e) {
       debugPrint('🔌 SocketException: $e');
-      throw ApiException('Error de conexión. Verifica tu conexión a internet.');
+      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+    } on TimeoutException {
+      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
     } catch (e) {
       debugPrint('💥 Unexpected error: $e');
-      throw ApiException('Error inesperado: $e');
+      if (e is ApiException) rethrow;
+      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
     }
   }
 
@@ -196,32 +174,32 @@ class ApiService {
           
         case 400:
           throw ApiException(
-            responseData['detail'] ?? responseData['message'] ?? 'Datos inválidos.',
+            responseData['detail'] ?? responseData['message'] ?? 'Los datos ingresados no son válidos. Por favor, verifica la información.',
             400,
           );
         case 401:
-          throw ApiException('Sesión expirada. Inicia sesión nuevamente.', 401);
+          throw ApiException('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 401);
         case 403:
-          throw ApiException('No tienes permisos para realizar esta acción.', 403);
+          throw ApiException('No tienes los permisos necesarios para realizar esta acción.', 403);
         case 404:
-          throw ApiException('Recurso no encontrado.', 404);
+          throw ApiException('No se encontró la información solicitada.', 404);
         case 422:
           if (responseData['detail'] is List) {
             final errors = responseData['detail'] as List;
             final errorMessages = errors
                 .map((error) => error['msg'] ?? error.toString())
                 .join(', ');
-            throw ApiException('Errores de validación: $errorMessages', 422);
+            throw ApiException('Por favor, corrige los siguientes errores: $errorMessages', 422);
           }
           throw ApiException(
-            responseData['detail'] ?? 'Error de validación.',
+            responseData['detail'] ?? 'Los datos ingresados no son correctos. Por favor, revisa la información.',
             422,
           );
         case 500:
-          throw ApiException('Error interno del servidor.', 500);
+          throw ApiException('Hubo un problema en el servidor. Por favor, intenta más tarde.', 500);
         default:
           throw ApiException(
-            'Error desconocido (${response.statusCode}): ${responseData['detail'] ?? response.body}',
+            'Ocurrió un error inesperado. Por favor, intenta nuevamente.',
             response.statusCode,
           );
       }

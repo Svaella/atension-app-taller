@@ -1,30 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../utils/bp_style.dart';
 import '../../services/bp_service.dart';
 import '../../models/bp_entry.dart'; // nuevo import
-
-Color _riskColor(String cat) {
-  switch (cat.toUpperCase()) {
-    case 'ALTO':
-      return const Color(0xFFD13434);
-    case 'MEDIO':
-      return const Color(0xFFE6B800);
-    default:
-      return const Color(0xFF1CC062);
-  }
-}
-
-String _riskLabel(String cat) {
-  switch (cat.toUpperCase()) {
-    case 'ALTO':
-      return 'Hipertensión';
-    case 'MEDIO':
-      return 'Medio';
-    default:
-      return 'Normal';
-  }
-}
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -50,8 +29,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
         child: ListView( // <- Column -> ListView para permitir scroll y evitar overflow
           children: [
             const SizedBox(height: 8),
-            Text('Historial', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
-            const SizedBox(height: 12),
+            Text('Tendencia', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 20),
             _MiniBars(items: bp.items),
             const SizedBox(height: 12),
             SizedBox(
@@ -68,9 +47,9 @@ class _RegistroScreenState extends State<RegistroScreen> {
                 child: const Text('Ver Historial Completo', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ),
-            const SizedBox(height: 24),
-            Text('Última toma de presión', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
-            const SizedBox(height: 12),
+            const SizedBox(height: 42),
+            Text('Última toma de presión', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
             if (last != null)
               _LastCard(sys: last.systolic, dia: last.diastolic, cat: last.category, date: last.takenAt)
             else
@@ -150,7 +129,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       children: [
                         const Text('Fecha: ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                         Text(
-                          DateFormat('dd de MMMM, yyyy', 'es').format(DateTime.now()),
+                          // Antes: DateFormat('dd de MMMM, yyyy', 'es')
+                          DateFormat("d 'de' MMMM, yyyy", 'es').format(DateTime.now()),
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -167,37 +147,60 @@ class _RegistroScreenState extends State<RegistroScreen> {
           ),
         ),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Atrás'),
+                ),
               ),
-              onPressed: () async {
-                // Construye taken_at con FECHA DE HOY + hora/minuto seleccionados
-                final today = DateTime.now();
-                final selected = DateTime(today.year, today.month, today.day, hour.value, minute.value);
-
-                final ok = await context.read<BPService>().add(
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () async {
+                    final today = DateTime.now();
+                    final selected = DateTime(
+                      today.year,
+                      today.month,
+                      today.day,
+                      hour.value,
+                      minute.value,
+                    );
+                    // selected se pasa en hora local; el servicio lo enviará en UTC
+                    final ok = await context.read<BPService>().add(
                       sys: sys.value,
                       dia: dia.value,
                       takenAt: selected,
                     );
-                if (!context.mounted) return;
-                if (ok) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registro guardado')));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No se pudo guardar'), backgroundColor: Colors.red),
-                  );
-                }
-              },
-              child: const Text('Guardar'),
-            ),
+                    if (!context.mounted) return;
+                    if (ok) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registro guardado')));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No se pudo guardar'), backgroundColor: Colors.red),
+                      );
+                    }
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -221,7 +224,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Center(
               child: Text('Ver Historial Completo',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20) ),
             ),
             content: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 360),
@@ -237,8 +240,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (_, i) {
                           final e = entries[i];
-                          final color = _riskColor(e.category);
-                          final dt = DateFormat('dd MMMM, yyyy – HH:mm', 'es').format(e.takenAt);
+                          final vis = bpVisualFromCategory(e.category);
+                          final dt = DateFormat("d 'de' MMMM, yyyy – HH:mm", 'es').format(e.takenAt);
                           final isSelected = selectedId == e.id;
                           return GestureDetector(
                             onTap: () => setDialogState(() => selectedId = e.id),
@@ -247,8 +250,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? color : Colors.transparent,
-                                  width: isSelected ? 1.5 : 1,
+                                  color: isSelected ? vis.color : Colors.transparent,
+                                  width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -259,29 +262,29 @@ class _RegistroScreenState extends State<RegistroScreen> {
                                 ],
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                                 child: Row(
                                   children: [
                                     Container(
                                       width: 8,
-                                      height: 56,
+                                      height: 64,
                                       decoration: BoxDecoration(
-                                        color: color,
-                                        borderRadius: BorderRadius.circular(6),
+                                        color: vis.color,
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                     ),
-                                    const SizedBox(width: 16),
+                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            _riskLabel(e.category).toUpperCase(),
+                                            vis.label.toUpperCase(),
                                             style: TextStyle(
-                                              color: color,
+                                              color: vis.color,
                                               fontWeight: FontWeight.w900,
-                                              fontSize: 18,
-                                              letterSpacing: 0.6,
+                                              fontSize: 16,
+                                              letterSpacing: 0.4,
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -297,22 +300,22 @@ class _RegistroScreenState extends State<RegistroScreen> {
                                       ),
                                     ),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         Text(
                                           '${e.systolic}',
                                           style: const TextStyle(
-                                            fontSize: 24,
+                                            fontSize: 22,
                                             fontWeight: FontWeight.w900,
                                             color: Colors.black87,
                                           ),
                                         ),
-                                        const SizedBox(height: 6),
+                                        
                                         Text(
                                           '${e.diastolic}',
                                           style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
                                             color: Colors.black54,
                                           ),
                                         ),
@@ -371,28 +374,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
       ),
     );
   }
-
-  Color _riskColor(String cat) {
-    switch (cat.toUpperCase()) {
-      case 'ALTO':
-        return const Color(0xFFD13434);
-      case 'MEDIO':
-        return const Color(0xFFE6B800);
-      default:
-        return const Color(0xFF1CC062);
-    }
-  }
-
-  String _riskLabel(String cat) {
-    switch (cat.toUpperCase()) {
-      case 'ALTO':
-        return 'Hipertensión';
-      case 'MEDIO':
-        return 'Medio';
-      default:
-        return 'Normal';
-    }
-  }
 }
 
 class _NumberPicker extends StatelessWidget {
@@ -444,26 +425,22 @@ class _LastCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _riskColor(cat);
-    final label = _riskLabel(cat);
+    final vis = bpVisualFromCategory(cat);
     return Container(
       decoration: BoxDecoration(
-        color: color,
+        color: vis.color,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 6)),
-        ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       child: Row(
         children: [
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text('$sys',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 38,
+                    fontSize: 28,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   )),
@@ -477,15 +454,15 @@ class _LastCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(label.toUpperCase(),
+                Text(vis.label.toUpperCase(),
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.6)),
                 const SizedBox(height: 6),
                 Text(
-                  DateFormat('dd MMMM, yyyy – HH:mm', 'es').format(date),
+                  DateFormat("d 'de' MMMM, yyyy – HH:mm", 'es').format(date),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12),
                 ),
@@ -494,7 +471,7 @@ class _LastCard extends StatelessWidget {
           ),
           const SizedBox(width: 20),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text('$dia',
                   style: const TextStyle(
@@ -554,7 +531,7 @@ class _MiniBars extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: display.map((e) {
-          final color = _riskColor(e.category);
+          final vis = bpVisualFromCategory(e.category);
           final normalized = (e.systolic.clamp(90, 180) - 90) / 90;
           final barHeight = 60 + (normalized * 50);
 
@@ -564,7 +541,7 @@ class _MiniBars extends StatelessWidget {
               children: [
                 Text(
                   '${e.systolic}',
-                  style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.w900),
+                  style: TextStyle(color: vis.color, fontSize: 18, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 6),
                 Expanded(
@@ -574,7 +551,7 @@ class _MiniBars extends StatelessWidget {
                       width: 22,
                       height: barHeight,
                       decoration: BoxDecoration(
-                        color: color,
+                        color: vis.color,
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),

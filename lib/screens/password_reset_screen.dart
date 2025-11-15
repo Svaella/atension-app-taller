@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../utils/colors.dart';
-import '../utils/constants.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../services/api_service.dart';
+import '../services/theme_service.dart';
 
 class PasswordResetScreen extends StatefulWidget {
   const PasswordResetScreen({super.key});
@@ -40,9 +42,11 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // Mostrar mensaje de error amigable
+        final errorMessage = e is ApiException ? e.message : 'No se pudo validar el código. Por favor, verifica e intenta nuevamente.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -53,51 +57,53 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.darkBackground, Color(0xFF2D3748)],
-          ),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/login');
+            }
+          },
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  
-                  // Logo y título
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primaryRed,
-                        ),
-                        child: const Icon(
-                          Icons.favorite,
-                          size: 32,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        Constants.appName,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+        title: const Text(
+          'Recuperación de Contraseña',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: AppColors.primaryRed,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: themeService.isDarkTheme
+                        ? [AppColors.darkBackground, const Color(0xFF2D3748)]
+                        : [Colors.grey[50]!, Colors.grey[100]!],
                   ),
-                  
-                  const SizedBox(height: 60),
+                ),
+                child: SafeArea(
+                  child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - MediaQuery.of(context).padding.top,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                  const SizedBox(height: 40),
                   
                   // Card de instrucciones
                   Container(
@@ -180,12 +186,17 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     ],
                   ),
                   
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-        ),
+                  const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                  ),
+                ),
+              );
+            });
+        },
       ),
     );
   }

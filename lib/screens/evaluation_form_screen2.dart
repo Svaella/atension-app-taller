@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_dropdown.dart';
 import '../services/auth_service.dart';
 import '../services/evaluation_service.dart';
+import '../services/api_service.dart';
 // TopNavigationMenu removed - tabs no longer needed in evaluation
 import '../widgets/user_menu_button.dart';
 import '../models/evaluation_draft.dart';
@@ -111,9 +113,11 @@ class _EvaluationFormStep2ScreenState extends State<EvaluationFormStep2Screen> {
     } catch (e) {
       debugPrint('❌ Error en evaluación: $e');
       if (mounted) {
+        // Mostrar mensaje de error amigable
+        final errorMessage = e is ApiException ? e.message : 'No se pudo realizar la evaluación. Por favor, verifica los datos e intenta nuevamente.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al realizar la evaluación: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -188,13 +192,20 @@ class _EvaluationFormStep2ScreenState extends State<EvaluationFormStep2Screen> {
                   labelText: 'Sufrió de estrés, ansiedad o depresión (últimos 30 días)',
                   hintText: 'Ingrese un número de días',
                   keyboardType: TextInputType.number,
+                  maxLength: 2,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa el número de días';
                     }
                     final days = int.tryParse(value);
-                    if (days == null || days < 0 || days > 30) {
-                      return 'Ingresa un número válido entre 0 y 30';
+                    if (days == null) {
+                      return 'Ingresa un número válido';
+                    }
+                    if (days < 0 || days > 30) {
+                      return 'Ingrese un valor entre 0 y 30';
                     }
                     return null;
                   },

@@ -9,6 +9,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_dropdown.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import '../services/theme_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -262,9 +264,11 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
       }
     } catch (e) {
       if (mounted) {
+        // Mostrar mensaje de error amigable
+        final errorMessage = e is ApiException ? e.message : 'No se pudo completar el registro. Por favor, verifica tus datos e intenta nuevamente.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error de conexión: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -295,17 +299,21 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.darkBackground, Color(0xFF2D3748)],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      body: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: themeService.isDarkTheme
+                    ? [AppColors.darkBackground, const Color(0xFF2D3748)]
+                    : [Colors.grey[50]!, Colors.grey[100]!],
+              ),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -540,9 +548,11 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                   const SizedBox(height: 40),
                 ],
               ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

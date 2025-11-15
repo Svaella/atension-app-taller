@@ -3,8 +3,8 @@ class Constants {
   //static const String baseUrl = 'http://localhost:8000/api'; // Cambia por tu URL de FastAPI
   // URL base del backend (SIN /api al final)
   //static const String baseUrl = 'http://127.0.0.1:8000';
-  //static const String baseUrl = 'http://192.168.1.38:8000';
-  static const String baseUrl = 'http://10.245.160.80:8000';
+  static const String baseUrl = 'http://192.168.1.38:8000';
+  //static const String baseUrl = 'http://10.139.134.80:8000';
   static const String apiV1 = '/api/v1';
   
   // Endpoints de autenticación

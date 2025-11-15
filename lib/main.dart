@@ -33,20 +33,26 @@ class ATensionApp extends StatelessWidget {
           update: (_, auth, svc) => (svc!..attachAuth(auth)),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'aTensión',
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('es', 'ES'), // Español
-        ],
-        locale: const Locale('es', 'ES'),
-        theme: ThemeService().themeData,
-        routerConfig: AppRouter.router,
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp.router(
+            title: 'aTensión',
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('es', 'ES'), // Español
+            ],
+            locale: const Locale('es', 'ES'),
+            theme: themeService.lightTheme,
+            darkTheme: themeService.darkTheme,
+            themeMode: themeService.isDarkTheme ? ThemeMode.dark : ThemeMode.light,
+            routerConfig: AppRouter.router,
+          );
+        },
       ),
     );
   }

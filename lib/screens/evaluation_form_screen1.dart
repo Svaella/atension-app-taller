@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -279,12 +280,20 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   labelText: 'Peso',
                   hintText: 'Ingrese su peso en kg',
                   keyboardType: TextInputType.number,
+                  maxLength: 3,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu peso';
                     }
-                    if (double.tryParse(value) == null) {
+                    final peso = int.tryParse(value);
+                    if (peso == null) {
                       return 'Ingresa un peso válido';
+                    }
+                    if (peso < 40 || peso > 220) {
+                      return 'Ingrese un peso entre 40 y 220 kg';
                     }
                     return null;
                   },
@@ -298,12 +307,20 @@ class _EvaluationFormScreenState extends State<EvaluationFormScreen> {
                   labelText: 'Altura',
                   hintText: 'Ingrese su altura en cm',
                   keyboardType: TextInputType.number,
+                  maxLength: 3,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Por favor ingresa tu altura';
                     }
-                    if (double.tryParse(value) == null) {
+                    final altura = int.tryParse(value);
+                    if (altura == null) {
                       return 'Ingresa una altura válida';
+                    }
+                    if (altura < 120 || altura > 220) {
+                      return 'Ingrese una altura de 120 a 220 cm';
                     }
                     return null;
                   },

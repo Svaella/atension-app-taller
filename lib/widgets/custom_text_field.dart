@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/colors.dart';
 
 class CustomTextField extends StatelessWidget {
@@ -13,6 +14,8 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onChanged;
   final int maxLines;
   final bool enabled;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CustomTextField({
     super.key,
@@ -27,6 +30,8 @@ class CustomTextField extends StatelessWidget {
     this.onChanged,
     this.maxLines = 1,
     this.enabled = true,
+    this.maxLength,
+    this.inputFormatters,
   });
 
   @override
@@ -53,11 +58,14 @@ class CustomTextField extends StatelessWidget {
           onChanged: onChanged,
           maxLines: maxLines,
           enabled: enabled,
+          maxLength: maxLength,
+          inputFormatters: inputFormatters,
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontSize: 16,
           ),
           decoration: InputDecoration(
+            counterText: maxLength != null ? '' : null,
             hintText: hintText,
             hintStyle: TextStyle(
               color: isDark ? Colors.grey[400] : Colors.grey[600],

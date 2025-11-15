@@ -6,7 +6,9 @@ import '../utils/constants.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 import '../services/auth_service.dart';
-import '../services/bp_service.dart'; // nuevo
+import '../services/bp_service.dart';
+import '../services/api_service.dart';
+import '../services/theme_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,9 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // Mostrar mensaje de error amigable
+        final errorMessage = e is ApiException ? e.message : 'No se pudo iniciar sesión. Por favor, verifica tus datos e intenta nuevamente.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error de conexión: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -90,18 +94,22 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Container(
-            height: constraints.maxHeight,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.darkBackground, Color(0xFF2D3748)],
-              ),
-            ),
-            child: SafeArea(
+      body: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                height: constraints.maxHeight,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: themeService.isDarkTheme
+                        ? [AppColors.darkBackground, const Color(0xFF2D3748)]
+                        : [Colors.grey[50]!, Colors.grey[100]!],
+                  ),
+                ),
+                child: SafeArea(
               child: SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: 24,
@@ -254,7 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           );
-        },
+        });
+      },
       ),
     );
   }
