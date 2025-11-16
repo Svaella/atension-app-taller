@@ -29,7 +29,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
         child: ListView( // <- Column -> ListView para permitir scroll y evitar overflow
           children: [
             const SizedBox(height: 8),
-            Text('Tendencia', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+            Text('Tendencias', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 26)),
             const SizedBox(height: 20),
             _MiniBars(items: bp.items),
             const SizedBox(height: 12),
@@ -498,13 +498,13 @@ class _MiniBars extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return Container(
-        height: 190,
+        height: 240,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
+          color: const Color(0xFF3D4A5C),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: const Center(
-          child: Text('Sin datos', style: TextStyle(color: Colors.black45)),
+          child: Text('Sin datos', style: TextStyle(color: Colors.white54, fontSize: 16)),
         ),
       );
     }
@@ -512,64 +512,103 @@ class _MiniBars extends StatelessWidget {
     final data = [...items];
     data.sort((a, b) => a.takenAt.compareTo(b.takenAt));
     final display = data.take(4).toList();
+    
+    // Obtener el año de la última medición
+    final year = display.isNotEmpty ? display.last.takenAt.year : DateTime.now().year;
 
     return Container(
-      height: 190,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF3D4A5C),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 12,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: display.map((e) {
-          final vis = bpVisualFromCategory(e.category);
-          final normalized = (e.systolic.clamp(90, 180) - 90) / 90;
-          final barHeight = 60 + (normalized * 50);
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Título con año
+          Text(
+            '$year',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Gráfico de barras con más espacio
+          SizedBox(
+            height: 190,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: display.map((e) {
+                final vis = bpVisualFromCategory(e.category);
+                // Calcular altura normalizada con límite superior más alto
+                final normalized = (e.systolic.clamp(70, 220) - 70) / 150;
+                // Altura mínima 40, máxima 120 (deja espacio suficiente para textos)
+                final barHeight = (40 + (normalized * 80)).clamp(40.0, 120.0);
 
-          return SizedBox(
-            width: 68,
-            child: Column(
-              children: [
-                Text(
-                  '${e.systolic}',
-                  style: TextStyle(color: vis.color, fontSize: 18, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 6),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                      width: 22,
-                      height: barHeight,
-                      decoration: BoxDecoration(
-                        color: vis.color,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                return Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Valor sistólico arriba
+                        Text(
+                          '${e.systolic}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        // Barra con color según categoría
+                        Container(
+                          width: 38,
+                          height: barHeight,
+                          decoration: BoxDecoration(
+                            color: vis.color,
+                            borderRadius: BorderRadius.circular(19),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        // Valor diastólico abajo
+                        Text(
+                          '${e.diastolic}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // Fecha
+                        Text(
+                          DateFormat('dd-MM', 'es').format(e.takenAt),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${e.diastolic}',
-                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-                Text(
-                  DateFormat('dd-MM', 'es').format(e.takenAt),
-                  style: const TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.w600),
-                ),
-              ],
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }

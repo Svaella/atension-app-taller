@@ -12,8 +12,7 @@ Color _riskColor(RiskLevel level) {
     case RiskLevel.moderate:
       return const Color(0xFFE6B800); // amarillo
     case RiskLevel.low:
-    default:
-      return const Color(0xFF1CC062); // verde
+    return const Color(0xFF1CC062); // verde
   }
 }
 
@@ -27,6 +26,16 @@ IconData _riskIcon(RiskFactor risk) {
       return Icons.monitor_weight;
     case 'alcohol':
       return Icons.local_bar;
+    case 'cholesterol':
+      return Icons.favorite;
+    case 'diabetes':
+      return Icons.bloodtype;
+    case 'salt':
+      return Icons.grain;
+    case 'stress':
+      return Icons.psychology;
+    case 'vaping':
+      return Icons.cloud;
     default:
       return Icons.health_and_safety;
   }
@@ -52,6 +61,13 @@ class TusDatosScreen extends StatelessWidget {
       );
     }
 
+    // Filtrar solo riesgos en rojo (high, obesity) o amarillo (moderate)
+    final risksToShow = summary.risks.where((risk) {
+      return risk.level == RiskLevel.high ||
+          risk.level == RiskLevel.obesity ||
+          risk.level == RiskLevel.moderate;
+    }).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -59,17 +75,39 @@ class TusDatosScreen extends StatelessWidget {
         children: [
           _HeaderCard(summary: summary),
           const SizedBox(height: 24),
+          _NextEvaluation(days: summary.daysUntilNext),
+          const SizedBox(height: 24),
           const Text(
             'Riesgos encontrados',
             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
-          ...summary.risks.map((risk) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _RiskCard(risk: risk),
-              )),
-          const SizedBox(height: 24),
-          _NextEvaluation(days: summary.daysUntilNext),
+          if (risksToShow.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1CC062),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.black87, size: 28),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'No se encontraron riesgos',
+                      style: TextStyle(
+                          color: Colors.black, fontWeight: FontWeight.w800, fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...risksToShow.map((risk) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _RiskCard(risk: risk),
+                )),
         ],
       ),
     );
@@ -149,6 +187,7 @@ class _RiskCard extends StatelessWidget {
           color: color,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
+            // ignore: deprecated_member_use
             BoxShadow(color: color.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6)),
           ],
         ),
