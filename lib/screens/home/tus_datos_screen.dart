@@ -50,14 +50,19 @@ class TusDatosScreen extends StatelessWidget {
     final profile = context.watch<ProfileService>();
     debugPrint('📊 ProfileService: isLoading=${profile.isLoading}, summary=${profile.summary}');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     if (profile.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final summary = profile.summary;
     if (summary == null) {
-      return const Center(
-        child: Text('Sin evaluación disponible', style: TextStyle(color: Colors.white70)),
+      return Center(
+        child: Text(
+          'Sin evaluación disponible', 
+          style: TextStyle(color: isDark ? Colors.white70 : Colors.grey[600]),
+        ),
       );
     }
 
@@ -77,9 +82,13 @@ class TusDatosScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _NextEvaluation(days: summary.daysUntilNext),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Riesgos encontrados',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 16),
           if (risksToShow.isEmpty)
@@ -120,17 +129,19 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFBFC0C2),
+        color: isDark ? const Color(0xFF4A5568) : const Color(0xFFE2E8F0),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: Colors.white,
+            backgroundColor: isDark ? Colors.white : Colors.white,
             child: Icon(
               summary.age >= 60 ? Icons.person_outline : Icons.person,
               color: Colors.black87,
@@ -143,15 +154,23 @@ class _HeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Edad: ${summary.age} años',
-                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700, fontSize: 18)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    )),
                 const SizedBox(height: 4),
                 Text('Sexo: ${summary.gender}',
-                    style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500)),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    )),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -287,21 +306,26 @@ class _NextEvaluation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF2D3748) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.access_time, color: Colors.black54),
+          Icon(Icons.access_time, color: isDark ? Colors.white70 : Colors.black54),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Días para la siguiente evaluación: $days',
-              style: const TextStyle(
-                  color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 14),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
             ),
           ),
         ],

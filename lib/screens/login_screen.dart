@@ -150,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Text(
                               Constants.appName,
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
+                                color: themeService.isDarkTheme ? Colors.white : Colors.black87,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -237,9 +237,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               '¿Aún no tienes una cuenta? ',
-                              style: TextStyle(color: AppColors.textSecondary),
+                              style: TextStyle(
+                                color: themeService.isDarkTheme ? AppColors.textSecondary : Colors.grey[700],
+                              ),
                             ),
                             GestureDetector(
                               onTap: () => context.go('/register'),

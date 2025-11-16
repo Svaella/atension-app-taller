@@ -65,21 +65,35 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(child: pages[_index]),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) {
-          setState(() => _index = i);
-          _maybeFetchProfile(i);
-        },
-        backgroundColor: AppColors.botttomBar, // Fondo barra
-        selectedItemColor: AppColors.textPrimary,        // Ítem seleccionado
-        unselectedItemColor: Colors.white60,    // Ítems no seleccionados
-        showUnselectedLabels: true,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tus Datos'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Registro'),
-          BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'Información'),
-        ],
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? AppColors.botttomBar 
+                : Colors.white,
+            selectedItemColor: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.textPrimary
+                : AppColors.primaryRed,
+            unselectedItemColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white60
+                : Colors.grey[600],
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _index,
+          onTap: (i) {
+            setState(() => _index = i);
+            _maybeFetchProfile(i);
+          },
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tus Datos'),
+            BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Registro'),
+            BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'Información'),
+          ],
+        ),
       ),
     );
   }

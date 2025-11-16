@@ -29,9 +29,9 @@ class CustomDropdown<T> extends StatelessWidget {
         Text(
           labelText,
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color,
+            color: isDark ? Colors.white : Colors.black87,
             fontSize: 16,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 8),

@@ -36,33 +36,38 @@ class HistoryScreen extends StatelessWidget {
                   }
 
                   if (evaluationService.evaluations.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.history,
-                            size: 80,
-                            color: AppColors.textSecondary,
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'No tienes evaluaciones aún',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 18,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Realiza tu primera evaluación para ver tu historial',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                    return Center(
+                      child: Builder(
+                        builder: (context) {
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 80,
+                                color: isDark ? AppColors.textSecondary : Colors.grey[400],
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'No tienes evaluaciones aún',
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textSecondary : Colors.grey[700],
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Realiza tu primera evaluación para ver tu historial',
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textSecondary : Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     );
                   }

@@ -29,7 +29,14 @@ class _RegistroScreenState extends State<RegistroScreen> {
         child: ListView( // <- Column -> ListView para permitir scroll y evitar overflow
           children: [
             const SizedBox(height: 8),
-            Text('Tendencias', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 26)),
+            Text(
+              'Tendencias',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w700,
+                fontSize: 26,
+              ),
+            ),
             const SizedBox(height: 14),
             _MiniBars(items: bp.items),
             const SizedBox(height: 12),
@@ -38,8 +45,12 @@ class _RegistroScreenState extends State<RegistroScreen> {
               child: ElevatedButton(
                 onPressed: () => _showHistoryModal(context, bp),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF747474),
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF747474)
+                      : Colors.grey[300],
+                  foregroundColor: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -48,25 +59,41 @@ class _RegistroScreenState extends State<RegistroScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Última toma de presión', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+            Text(
+              'Última toma de presión',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const SizedBox(height: 14),
             if (last != null)
               _LastCard(sys: last.systolic, dia: last.diastolic, cat: last.category, date: last.takenAt)
             else
-              const Text('Sin registros', style: TextStyle(color: Colors.white70)),
+              Text(
+                'Sin registros',
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white70 : Colors.grey[600],
+                ),
+              ),
             const SizedBox(height: 16),
             SizedBox(
               height: 54,
-              child: ElevatedButton.icon(
-                onPressed: () => _showAddModal(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                icon: const Icon(Icons.add, size: 22),
-                label: const Text('Añadir Presión', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return ElevatedButton.icon(
+                    onPressed: () => _showAddModal(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? Colors.white : Colors.grey[200],
+                      foregroundColor: Colors.black87,
+                      elevation: isDark ? 0 : 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    icon: const Icon(Icons.add, size: 22),
+                    label: const Text('Añadir Presión', style: TextStyle(fontWeight: FontWeight.w700)),
+                  );
+                },
               ),
             ),
           ],

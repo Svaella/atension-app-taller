@@ -340,7 +340,7 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                       Text(
                         Constants.appName,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
+                          color: themeService.isDarkTheme ? Colors.white : Colors.black87,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -470,7 +470,7 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                             _acceptTerms = value ?? false;
                           });
                         },
-                        activeColor: Colors.blue,
+                        activeColor: AppColors.primaryRed,
                         checkColor: Colors.white,
                       ),
                       Expanded(
@@ -479,10 +479,10 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                           child: RichText(
                             text: TextSpan(
                               children: [
-                                const TextSpan(
+                                TextSpan(
                                   text: 'Acepta ',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: themeService.isDarkTheme ? Colors.white : Colors.black87,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -528,9 +528,11 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         '¿Ya tienes una cuenta? ',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(
+                          color: themeService.isDarkTheme ? AppColors.textSecondary : Colors.grey[700],
+                        ),
                       ),
                       GestureDetector(
                         onTap: () => context.go('/login'),

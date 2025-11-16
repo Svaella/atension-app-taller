@@ -106,7 +106,7 @@ class ThemeService extends ChangeNotifier {
       brightness: Brightness.light,
       primarySwatch: Colors.red,
       primaryColor: AppColors.primaryRed,
-      scaffoldBackgroundColor: Colors.white,
+      scaffoldBackgroundColor: const Color(0xFFF7FAFC),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primaryRed,
         foregroundColor: Colors.white,
@@ -157,10 +157,12 @@ class ThemeService extends ChangeNotifier {
         titleSmall: TextStyle(color: Colors.black87),
       ),
       iconTheme: const IconThemeData(color: Colors.black87),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primaryRed,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: Colors.grey[600],
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
       ),
     );
   }
