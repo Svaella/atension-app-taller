@@ -69,14 +69,14 @@ class TusDatosScreen extends StatelessWidget {
     }).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _HeaderCard(summary: summary),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           _NextEvaluation(days: summary.daysUntilNext),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           const Text(
             'Riesgos encontrados',
             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),

@@ -71,6 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _index = i);
           _maybeFetchProfile(i);
         },
+        backgroundColor: AppColors.botttomBar, // Fondo barra
+        selectedItemColor: AppColors.textPrimary,        // Ítem seleccionado
+        unselectedItemColor: Colors.white60,    // Ítems no seleccionados
+        showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tus Datos'),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Registro'),

@@ -11,6 +11,7 @@ class AppColors {
   static const Color errorRed = Color(0xFFE53E3E);
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFA0AEC0);
+  static const Color botttomBar = Color.fromARGB(255, 36, 36, 36);
   
   // Colores del gauge de riesgo
   static const Color riskLow = Color(0xFF38A169);

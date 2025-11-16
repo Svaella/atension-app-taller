@@ -157,6 +157,11 @@ class ThemeService extends ChangeNotifier {
         titleSmall: TextStyle(color: Colors.black87),
       ),
       iconTheme: const IconThemeData(color: Colors.black87),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Colors.white,
+        selectedItemColor: AppColors.primaryRed,
+        unselectedItemColor: Colors.grey,
+      ),
     );
   }
 
