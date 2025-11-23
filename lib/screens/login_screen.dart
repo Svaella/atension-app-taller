@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import '../services/bp_service.dart';
 import '../services/api_service.dart';
 import '../services/theme_service.dart';
+import '../services/onboarding_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,7 +47,16 @@ class _LoginScreenState extends State<LoginScreen> {
         if (result['success']) {
           await bpService.fetch(); // precarga registros
           if (!mounted) return;
-          context.go('/splash');
+          
+          // Verificar si necesita hacer la evaluación inicial
+          final onboarding = Provider.of<OnboardingService>(context, listen: false);
+          await onboarding.load();
+          
+          if (onboarding.evaluationDone) {
+            context.go('/home');
+          } else {
+            context.go('/evaluation-form');
+          }
         } else {
           // Login falló - mostrar error
           ScaffoldMessenger.of(context).showSnackBar(

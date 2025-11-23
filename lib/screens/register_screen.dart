@@ -43,6 +43,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _selectDate() async {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    final isDark = themeService.isDarkTheme;
+    
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -52,12 +55,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryRed,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primaryRed,
+                    onPrimary: Colors.white,
+                    surface: AppColors.darkGray,
+                    onSurface: Colors.white,
+                    background: AppColors.darkBackground,
+                    onBackground: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primaryRed,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Colors.black87,
+                    background: Colors.white,
+                    onBackground: Colors.black87,
+                  ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryRed,
+              ),
             ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: isDark ? AppColors.darkBackground : Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: AppColors.primaryRed,
+                  width: 2,
+                ),
+              ),
+              labelStyle: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white38 : Colors.black38,
+              ),
+            ),
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              bodyMedium: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            dialogBackgroundColor: isDark ? AppColors.darkGray : Colors.white,
           ),
           child: child!,
         );
@@ -262,8 +319,16 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
       final result = await authService.register(user, _passwordController.text);  // ← NUEVO
     
       if (mounted) {
-        if (result['success']) {  // ← NUEVO: Verificar éxito
-          // Registro exitoso - redirigir
+        if (result['success']) {
+          // Registro exitoso - usuario ya está autenticado, dirigir a evaluación
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Bienvenido! Completa tu primera evaluación'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          // Dirigir a la evaluación (usuario nuevo siempre debe hacerla)
           context.go('/evaluation-form');
         } else {
           // Registro falló - mostrar error
@@ -399,13 +464,32 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                       icon: const Icon(Icons.calendar_today, color: AppColors.darkGray),
                       onPressed: _selectDate,
                     ),
+                    onChanged: (value) {
+                      // Intentar parsear la fecha cuando se ingresa manualmente
+                      if (value.length == 10) {
+                        try {
+                          final parts = value.split('/');
+                          if (parts.length == 3) {
+                            final day = int.parse(parts[0]);
+                            final month = int.parse(parts[1]);
+                            final year = int.parse(parts[2]);
+                            final date = DateTime(year, month, day);
+                            
+                            // Validar que la fecha sea válida
+                            if (date.year == year && date.month == month && date.day == day) {
+                              setState(() {
+                                _selectedDate = date;
+                              });
+                            }
+                          }
+                        } catch (e) {
+                          // Si falla el parseo, no hacer nada
+                        }
+                      }
+                    },
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Por favor selecciona tu fecha de nacimiento';
-                      }
-                      final fecha = _parseFechaNacimiento(value);
-                      if (fecha == null) {
-                        return 'Formato inválido. Usa DD/MM/YYYY';
                       }
                       return null;
                     },

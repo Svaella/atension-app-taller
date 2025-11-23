@@ -38,8 +38,9 @@ class RiskGuideScreen extends StatelessWidget {
       color = Colors.green[600]!;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: isDark ? Colors.black : Colors.grey[100],
       appBar: AppBar(
         title: const Text('aTensión', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         backgroundColor: AppColors.primaryRed,

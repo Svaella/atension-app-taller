@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../utils/bp_style.dart';
 import '../../services/bp_service.dart';
 import '../../models/bp_entry.dart'; // nuevo import
@@ -567,15 +565,16 @@ class _MiniBars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (items.isEmpty) {
       return Container(
         height: 240,
         decoration: BoxDecoration(
-          color: const Color(0xFF3D4A5C),
+          color: isDark ? const Color(0xFF3D4A5C) : Colors.grey[300],
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Sin datos', style: TextStyle(color: Colors.white54, fontSize: 16)),
+        child: Center(
+          child: Text('Sin datos', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 16)),
         ),
       );
     }
@@ -586,8 +585,8 @@ class _MiniBars extends StatelessWidget {
     final year = data.isNotEmpty ? data.last.takenAt.year : DateTime.now().year;
 
     // Calcula el scroll inicial para mostrar las últimas 6 alineadas a la derecha
-    final itemWidth = 46.0; // ancho barra + separación
-    final visibleCount = 6;
+    const itemWidth = 46.0; // ancho barra + separación
+    const visibleCount = 6;
     final initialScroll = data.length > visibleCount
         ? (data.length - visibleCount) * itemWidth
         : 0.0;
@@ -595,10 +594,11 @@ class _MiniBars extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF3D4A5C),
+        color: isDark ? const Color(0xFF3D4A5C) : Colors.grey[300],
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(0, 6),
@@ -610,8 +610,8 @@ class _MiniBars extends StatelessWidget {
         children: [
           Text(
             '$year',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -637,8 +637,8 @@ class _MiniBars extends StatelessWidget {
                   children: [
                     Text(
                       '${e.systolic}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -655,8 +655,8 @@ class _MiniBars extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${e.diastolic}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -664,8 +664,8 @@ class _MiniBars extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       DateFormat('dd-MM', 'es').format(e.takenAt),
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black54,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),

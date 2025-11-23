@@ -9,13 +9,16 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.darkBackground, Color(0xFF2D3748)],
+            colors: isDark 
+              ? [AppColors.darkBackground, const Color(0xFF2D3748)]
+              : [Colors.grey[50]!, Colors.grey[200]!],
           ),
         ),
         child: SafeArea(
@@ -44,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
                 Text(
                   Constants.appName,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontWeight: FontWeight.bold,
                     fontSize: 48,
                   ),
@@ -55,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                 Text(
                   Constants.welcomeMessage,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: isDark ? AppColors.textSecondary : Colors.grey[700],
                     fontWeight: FontWeight.w300,
                   ),
                 ),
@@ -80,8 +83,8 @@ class WelcomeScreen extends StatelessWidget {
                     text: 'Registrarse',
                     onPressed: () => context.go('/register'),
                     backgroundColor: Colors.transparent,
-                    borderColor: Colors.white,
-                    textColor: Colors.white,
+                    borderColor: isDark ? Colors.white : Colors.black87,
+                    textColor: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
                 

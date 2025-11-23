@@ -99,15 +99,17 @@ class AuthService extends ChangeNotifier {
       await _saveUserData();
       
       _setLoading(false);
-      return {'success': true, 'message': 'Login exitoso'};
+      return {'success': true, 'message': 'Inicio de sesión exitoso'};
       
     } on ApiException catch (e) {
       _setLoading(false);
+      debugPrint('❌ Error en login: ${e.message}');
       return {'success': false, 'message': e.message};
       
     } catch (e) {
       _setLoading(false);
-      return {'success': false, 'message': 'Error inesperado: $e'};
+      debugPrint('❌ Error inesperado en login: $e');
+      return {'success': false, 'message': 'Ocurrió un error al iniciar sesión. Por favor, intenta nuevamente.'};
     }
   }
 
@@ -138,14 +140,16 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
       
       _setLoading(false);
-      return {'success': true, 'message': 'Usuario registrado exitosamente'};
+      return {'success': true, 'message': 'Registro exitoso. ¡Bienvenido!'};
       
     } on ApiException catch (e) {
       _setLoading(false);
+      debugPrint('❌ Error en registro: ${e.message}');
       return {'success': false, 'message': e.message};
     } catch (e) {
       _setLoading(false);
-      return {'success': false, 'message': 'Error inesperado: $e'};
+      debugPrint('❌ Error inesperado en registro: $e');
+      return {'success': false, 'message': 'Ocurrió un error al crear tu cuenta. Por favor, intenta nuevamente.'};
     }
   }
 
