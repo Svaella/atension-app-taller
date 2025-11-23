@@ -122,7 +122,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
             
             // Versión al final
             Center(
-              child: Column(
+             child: Column(
                 children: [
                   Text(
                     'Versión 1.0.0',
@@ -139,8 +139,8 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                         context: context,
                         builder: (dialogContext) => AlertDialog(
                           backgroundColor: AppColors.successGreen,
-                          title: Row(
-                            children: const [
+                          title: const Row(
+                            children: [
                               Icon(Icons.eco, color: Colors.white),
                               SizedBox(width: 8),
                               Text('Software Verde', style: TextStyle(color: Colors.white)),
@@ -196,9 +196,9 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                         ),
                       );
                     },
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(Icons.eco, color: Colors.green, size: 28),
                         SizedBox(width: 8),
                         Text(
