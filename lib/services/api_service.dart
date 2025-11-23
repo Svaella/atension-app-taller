@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
+import '../utils/error_messages.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -55,13 +56,13 @@ class ApiService {
 
       return _handleResponse(response);
     } on SocketException {
-      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+      throw ApiException(ErrorMessages.noConnection);
     } on TimeoutException {
-      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.timeout);
     } catch (e) {
       debugPrint('❌ Exception en GET: $e');
       if (e is ApiException) rethrow;
-      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.unexpectedError);
     }
   }
 
@@ -91,40 +92,16 @@ class ApiService {
       debugPrint('📡 Response Headers: ${response.headers}');
       debugPrint('📡 Response Body: ${response.body}');
       
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return json.decode(response.body);
-      } else if (response.statusCode == 422) {
-        final errorData = json.decode(response.body);
-        
-        // Log DETALLADO de errores de validación
-        debugPrint('❌ Errores de validación (422):');
-        if (errorData['detail'] is List) {
-          for (var error in errorData['detail']) {
-            debugPrint('   Campo: ${error['loc']}');
-            debugPrint('   Tipo: ${error['type']}');
-            debugPrint('   Mensaje: ${error['msg']}');
-            if (error['input'] != null) {
-              debugPrint('   Input recibido: ${error['input']}');
-            }
-          }
-        }
-        
-        throw ApiException('Error 422: ${errorData['detail']}');
-      } else if (response.statusCode == 401) {
-        throw ApiException('No autorizado (401)');
-      } else {
-        final errorData = json.decode(response.body);
-        throw ApiException('Error ${response.statusCode}: ${errorData['detail']}');
-      }
+      return _handleResponse(response);
     } on SocketException {
       debugPrint('🔌 Error de conexión');
-      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+      throw ApiException(ErrorMessages.noConnection);
     } on TimeoutException {
-      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.timeout);
     } catch (e) {
       debugPrint('❌ Exception en POST: $e');
       if (e is ApiException) rethrow;
-      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.unexpectedError);
     }
   }
 
@@ -151,13 +128,13 @@ class ApiService {
       return _handleResponse(response);
     } on SocketException catch (e) {
       debugPrint('🔌 SocketException: $e');
-      throw ApiException('No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+      throw ApiException(ErrorMessages.noConnection);
     } on TimeoutException {
-      throw ApiException('La conexión tardó demasiado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.timeout);
     } catch (e) {
       debugPrint('💥 Unexpected error: $e');
       if (e is ApiException) rethrow;
-      throw ApiException('Ocurrió un error inesperado. Por favor, intenta nuevamente.');
+      throw ApiException(ErrorMessages.unexpectedError);
     }
   }
 
@@ -173,39 +150,82 @@ class ApiService {
           return responseData;
           
         case 400:
-          throw ApiException(
-            responseData['detail'] ?? responseData['message'] ?? 'Los datos ingresados no son válidos. Por favor, verifica la información.',
-            400,
-          );
+          final detail = responseData['detail'] ?? responseData['message'];
+          final friendlyMessage = ErrorMessages.parseErrorDetail(detail);
+          throw ApiException(friendlyMessage, 400);
+          
         case 401:
-          throw ApiException('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 401);
+          final detail = responseData['detail'] ?? responseData['message'];
+          // Si el detalle menciona credenciales incorrectas
+          if (detail != null && detail.toString().toLowerCase().contains('incorrect')) {
+            throw ApiException(ErrorMessages.invalidCredentials, 401);
+          }
+          throw ApiException(ErrorMessages.sessionExpired, 401);
+          
         case 403:
-          throw ApiException('No tienes los permisos necesarios para realizar esta acción.', 403);
+          throw ApiException(ErrorMessages.permissionDenied, 403);
+          
         case 404:
-          throw ApiException('No se encontró la información solicitada.', 404);
+          throw ApiException(ErrorMessages.notFound, 404);
+          
         case 422:
           if (responseData['detail'] is List) {
             final errors = responseData['detail'] as List;
-            final errorMessages = errors
-                .map((error) => error['msg'] ?? error.toString())
-                .join(', ');
-            throw ApiException('Por favor, corrige los siguientes errores: $errorMessages', 422);
+            // Extraer mensajes de error más específicos
+            final errorMessages = errors.map((error) {
+              final field = error['loc']?.last ?? '';
+              final msg = error['msg'] ?? '';
+              
+              // Traducir campos comunes
+              String fieldName = field;
+              switch (field.toString().toLowerCase()) {
+                case 'email':
+                  fieldName = 'correo electrónico';
+                  break;
+                case 'password':
+                  fieldName = 'contraseña';
+                  break;
+                case 'first_name':
+                  fieldName = 'nombre';
+                  break;
+                case 'last_name':
+                  fieldName = 'apellidos';
+                  break;
+                case 'birth_date':
+                  fieldName = 'fecha de nacimiento';
+                  break;
+                case 'gender':
+                  fieldName = 'sexo';
+                  break;
+              }
+              
+              if (msg.toLowerCase().contains('missing') || msg.toLowerCase().contains('required')) {
+                return 'El campo $fieldName es obligatorio';
+              } else if (msg.toLowerCase().contains('invalid')) {
+                return 'El $fieldName no es válido';
+              } else if (msg.toLowerCase().contains('too short')) {
+                return 'El $fieldName es demasiado corto';
+              }
+              return 'Error en $fieldName';
+            }).join('. ');
+            
+            throw ApiException(errorMessages, 422);
           }
-          throw ApiException(
-            responseData['detail'] ?? 'Los datos ingresados no son correctos. Por favor, revisa la información.',
-            422,
-          );
+          final detail = responseData['detail'];
+          final friendlyMessage = ErrorMessages.parseErrorDetail(detail);
+          throw ApiException(friendlyMessage, 422);
+          
         case 500:
-          throw ApiException('Hubo un problema en el servidor. Por favor, intenta más tarde.', 500);
+        case 502:
+        case 503:
+          throw ApiException(ErrorMessages.serverError, response.statusCode);
+          
         default:
-          throw ApiException(
-            'Ocurrió un error inesperado. Por favor, intenta nuevamente.',
-            response.statusCode,
-          );
+          throw ApiException(ErrorMessages.unexpectedError, response.statusCode);
       }
     } catch (e) {
       if (e is ApiException) rethrow;
-      throw ApiException('Error al procesar la respuesta del servidor.');
+      throw ApiException(ErrorMessages.unexpectedError);
     }
   }
 }

@@ -523,15 +523,16 @@ class _MiniBars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (items.isEmpty) {
       return Container(
         height: 240,
         decoration: BoxDecoration(
-          color: const Color(0xFF3D4A5C),
+          color: isDark ? const Color(0xFF3D4A5C) : Colors.grey[300],
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Sin datos', style: TextStyle(color: Colors.white54, fontSize: 16)),
+        child: Center(
+          child: Text('Sin datos', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 16)),
         ),
       );
     }
@@ -551,7 +552,7 @@ class _MiniBars extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF3D4A5C),
+        color: isDark ? const Color(0xFF3D4A5C) : Colors.grey[300],
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -566,8 +567,8 @@ class _MiniBars extends StatelessWidget {
         children: [
           Text(
             '$year',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -593,8 +594,8 @@ class _MiniBars extends StatelessWidget {
                   children: [
                     Text(
                       '${e.systolic}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -611,8 +612,8 @@ class _MiniBars extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       '${e.diastolic}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -620,8 +621,8 @@ class _MiniBars extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       DateFormat('dd-MM', 'es').format(e.takenAt),
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : Colors.black54,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
