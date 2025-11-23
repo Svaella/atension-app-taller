@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../utils/colors.dart';
 import '../../widgets/user_menu_button.dart';
+import '../../widgets/rating_modal.dart';
 import '../../services/profile_service.dart';
+import '../../services/rating_service.dart';
+import '../../services/bp_service.dart';
 import 'tus_datos_screen.dart';
 import 'registro_screen.dart';
 import '../information_screen.dart';
@@ -17,12 +20,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 2;
+  bool _hasCheckedRatingModal = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _maybeFetchProfile(_index));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeFetchProfile(_index);
+      // ✅ CORRECCIÓN: Se llama a la lógica del modal aquí, después de que los providers se hayan inicializado.
+      _checkAndShowRatingModal();
+    });
   }
 
   void _maybeFetchProfile(int index) {
@@ -39,9 +46,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _checkAndShowRatingModal() {
+    if (_hasCheckedRatingModal) return;
+
+    final ratingService = context.read<RatingService>();
+    final bpService = context.read<BPService>();
+    
+    // ✅ CORRECCIÓN: La lógica ahora es más simple.
+    // 1. El usuario no debe haber valorado antes.
+    // 2. Debe tener al menos una presión registrada.
+    final hasPressures = bpService.items.isNotEmpty || bpService.last != null;
+    
+    if (ratingService.shouldShowRatingModal && hasPressures) {
+      _hasCheckedRatingModal = true; // Marcar como verificado para no mostrarlo de nuevo en esta sesión.
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const RatingModal(),
+          );
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pages = const [
+    const pages = [
       TusDatosScreen(),
       RegistroScreen(),
       InformationScreen(embedded: true),

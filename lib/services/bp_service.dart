@@ -30,7 +30,7 @@ class BPService extends ChangeNotifier {
   BPEntry? get last => _last;
   bool get loading => _loading;
 
-  Map<String, String> get _headers => {
+  Map<String, String> get headers => {
         'Content-Type': 'application/json',
         if ((_auth?.token ?? '').isNotEmpty) 'Authorization': 'Bearer ${_auth!.token}',
       };
@@ -40,7 +40,7 @@ class BPService extends ChangeNotifier {
     _loading = true;
     notifyListeners();
     try {
-      final listRes = await http.get(Uri.parse('$baseUrl/pressures?skip=0&limit=$limit'), headers: _headers);
+      final listRes = await http.get(Uri.parse('$baseUrl/pressures?skip=0&limit=$limit'), headers: headers);
       debugPrint('GET /pressures -> ${listRes.statusCode} ${listRes.body}');
       if (_auth?.token != tokenSnapshot) return;
 
@@ -54,7 +54,7 @@ class BPService extends ChangeNotifier {
         _items.clear();
       }
 
-      final lastRes = await http.get(Uri.parse('$baseUrl/pressures/last'), headers: _headers);
+      final lastRes = await http.get(Uri.parse('$baseUrl/pressures/last'), headers: headers);
       debugPrint('GET /pressures/last -> ${lastRes.statusCode} ${lastRes.body}');
       if (_auth?.token != tokenSnapshot) return;
 
@@ -77,11 +77,33 @@ class BPService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> fetchPage({required int page, int limit = 7}) async {
+    final tokenSnapshot = _auth?.token;
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/pressures?page=$page&limit=$limit'),
+        headers: headers,
+      );
+      debugPrint('GET /pressures?page=$page&limit=$limit -> ${res.statusCode} ${res.body}');
+      if (_auth?.token != tokenSnapshot) return {'items': [], 'total': 0};
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body) as Map<String, dynamic>;
+        final list = (body['items'] as List).cast<Map<String, dynamic>>();
+        final items = list.map(BPEntry.fromJson).toList();
+        final total = body['total'] ?? 0;
+        return {'items': items, 'total': total};
+      }
+    } catch (e) {
+      debugPrint('BPService.fetchPage error: $e');
+    }
+    return {'items': [], 'total': 0};
+  }
+
   Future<bool> add({required int sys, required int dia, required DateTime takenAt}) async {
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/pressures'),
-        headers: _headers,
+        headers: headers,
         body: json.encode({
           'systolic': sys,
           'diastolic': dia,
@@ -102,7 +124,7 @@ class BPService extends ChangeNotifier {
 
   Future<bool> delete(int id) async {
     try {
-      final res = await http.delete(Uri.parse('$baseUrl/pressures/$id'), headers: _headers);
+      final res = await http.delete(Uri.parse('$baseUrl/pressures/$id'), headers: headers);
       debugPrint('DELETE /pressures/$id -> ${res.statusCode}');
       if (res.statusCode == 204) {
         await fetch();

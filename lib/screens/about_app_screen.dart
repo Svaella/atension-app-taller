@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/colors.dart';
 // Eliminamos el menú superior para esta pantalla.
 
@@ -121,13 +122,97 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
             
             // Versión al final
             Center(
-              child: Text(
-                'Versión 1.0.0',
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.grey[600],
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    'Versión 1.0.0',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.grey[600],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          backgroundColor: AppColors.successGreen,
+                          title: Row(
+                            children: const [
+                              Icon(Icons.eco, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text('Software Verde', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Esta aplicación sigue buenas prácticas ambientales y utiliza infraestructura sostenible gracias a Google Cloud.\n\nMás información:',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              const SizedBox(height: 12),
+                              InkWell(
+                                onTap: () async {
+                                  final url = Uri.parse('https://cloud.google.com/sustainability?hl=es');
+                                  try {
+                                    final launched = await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                    if (!launched) {
+                                      Navigator.of(dialogContext).pop();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('No se pudo abrir el enlace')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    Navigator.of(dialogContext).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('No se pudo abrir el enlace')),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  'https://cloud.google.com/sustainability?hl=es',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    decoration: TextDecoration.underline,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              child: const Text('Cerrar', style: TextStyle(color: Colors.white)),
+                              onPressed: () => Navigator.of(dialogContext).pop(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.eco, color: Colors.green, size: 28),
+                        SizedBox(width: 8),
+                        Text(
+                          'Software Verde',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

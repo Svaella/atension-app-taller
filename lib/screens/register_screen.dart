@@ -202,6 +202,19 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
     );
   }
 
+  DateTime? _parseFechaNacimiento(String value) {
+  try {
+    final parts = value.split('/');
+    if (parts.length != 3) return null;
+    final day = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+    final year = int.parse(parts[2]);
+    return DateTime(year, month, day);
+  } catch (_) {
+    return null;
+  }
+}
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -390,7 +403,17 @@ Todos los elementos de diseño, logotipos, textos, código fuente y contenidos d
                       if (value == null || value.isEmpty) {
                         return 'Por favor selecciona tu fecha de nacimiento';
                       }
+                      final fecha = _parseFechaNacimiento(value);
+                      if (fecha == null) {
+                        return 'Formato inválido. Usa DD/MM/YYYY';
+                      }
                       return null;
+                    },
+                    onChanged: (value) {
+                      final fecha = _parseFechaNacimiento(value);
+                      setState(() {
+                        _selectedDate = fecha;
+                      });
                     },
                   ),
                   

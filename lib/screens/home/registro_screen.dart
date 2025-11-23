@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../utils/bp_style.dart';
 import '../../services/bp_service.dart';
 import '../../models/bp_entry.dart'; // nuevo import
@@ -217,7 +219,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     if (!context.mounted) return;
                     if (ok) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registro guardado')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Registro guardado'), backgroundColor: Colors.green));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('No se pudo guardar'), backgroundColor: Colors.red),
@@ -235,15 +237,47 @@ class _RegistroScreenState extends State<RegistroScreen> {
   }
 
   void _showHistoryModal(BuildContext context, BPService bp) {
-    int? selectedId = bp.items.isNotEmpty ? bp.items.first.id : null;
+    int page = 1;
+    int limit = 5;
+    List<BPEntry> entries = [];
+    bool loading = true;
+    int total = 0;
+    bool initialized = false;
+    int? selectedIndex;
+
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (_) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) {
-          final entries = bp.items;
-          if (selectedId != null && entries.every((e) => e.id != selectedId)) {
-            selectedId = entries.isEmpty ? null : entries.first.id;
+          Future<void> loadPage(int p) async {
+            setDialogState(() {
+              loading = true;
+              selectedIndex = null;
+            });
+            final result = await bp.fetchPage(page: p, limit: limit);
+            setDialogState(() {
+              entries = result['items'] as List<BPEntry>;
+              total = result['total'] as int;
+              page = p;
+              loading = false;
+            });
+          }
+
+          Future<void> deleteSelected() async {
+            if (selectedIndex == null) return;
+            final entry = entries[selectedIndex!];
+            final success = await bp.delete(entry.id);
+            if (success) {
+              // Recarga la página actual después de borrar
+              await loadPage(page);
+              setDialogState(() => selectedIndex = null);
+            }
+          }
+
+          if (!initialized) {
+            initialized = true;
+            loadPage(page);
           }
 
           return AlertDialog(
@@ -251,147 +285,157 @@ class _RegistroScreenState extends State<RegistroScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Center(
               child: Text('Ver Historial Completo',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20) ),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20)),
             ),
-            content: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 360),
-              child: SizedBox(
-                width: 360,
-                child: entries.isEmpty
-                    ? const Center(
-                        child: Text('Sin registros', style: TextStyle(color: Colors.white70)),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: entries.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (_, i) {
-                          final e = entries[i];
-                          final vis = bpVisualFromCategory(e.category);
-                          final dt = DateFormat("d 'de' MMMM, yyyy – HH:mm", 'es').format(e.takenAt);
-                          final isSelected = selectedId == e.id;
-                          return GestureDetector(
-                            onTap: () => setDialogState(() => selectedId = e.id),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? vis.color : Colors.transparent,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: isSelected ? 0.25 : 0.15),
-                                    blurRadius: isSelected ? 12 : 8,
-                                    offset: const Offset(0, 4),
+            content: SizedBox(
+              width: 360,
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : entries.isEmpty
+                      ? const Center(child: Text('Sin registros', style: TextStyle(color: Colors.white70)))
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: entries.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (_, i) {
+                            final e = entries[i];
+                            final vis = bpVisualFromCategory(e.category);
+                            final dt = DateFormat("d 'de' MMMM, yyyy – HH:mm", 'es').format(e.takenAt);
+                            final isSelected = selectedIndex == i;
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  selectedIndex = selectedIndex == i ? null : i;
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected ? vis.color : Colors.grey.shade300,
+                                    width: isSelected ? 3 : 2,
                                   ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 64,
-                                      decoration: BoxDecoration(
-                                        color: vis.color,
-                                        borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 64,
+                                        decoration: BoxDecoration(
+                                          color: vis.color,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              vis.label.toUpperCase(),
+                                              style: TextStyle(
+                                                color: vis.color,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 16,
+                                                letterSpacing: 0.4,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              dt,
+                                              style: const TextStyle(
+                                                color: Colors.black54,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           Text(
-                                            vis.label.toUpperCase(),
-                                            style: TextStyle(
-                                              color: vis.color,
+                                            '${e.systolic}',
+                                            style: const TextStyle(
+                                              fontSize: 22,
                                               fontWeight: FontWeight.w900,
-                                              fontSize: 16,
-                                              letterSpacing: 0.4,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
                                           Text(
-                                            dt,
+                                            '${e.diastolic}',
                                             style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w800,
                                               color: Colors.black54,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${e.systolic}',
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        
-                                        Text(
-                                          '${e.diastolic}',
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                            );
+                          },
+                        ),
             ),
-            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              Row(
+              Column(
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(dialogCtx),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE6E6E6),
-                        foregroundColor: Colors.black87,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: page > 1 && !loading
+                            ? () => loadPage(page - 1)
+                            : null,
+                        child: const Text('Anterior', style: TextStyle(color: Colors.white)),
                       ),
-                      child: const Text('Atrás'),
-                    ),
+                      Text(
+                        'Página $page',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      TextButton(
+                        onPressed: (page * limit < total) && !loading
+                            ? () => loadPage(page + 1)
+                            : null,
+                        child: const Text('Siguiente', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: selectedId == null
-                          ? null
-                          : () async {
-                              final ok = await context.read<BPService>().delete(selectedId!);
-                              if (!dialogCtx.mounted) return;
-                              if (ok) setDialogState(() {});
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD13434),
-                        disabledBackgroundColor: const Color(0xFFB5B5B5),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        elevation: 0,
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(120, 40),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Atrás'),
                       ),
-                      child: const Text('Borrar'),
-                    ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(120, 40),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        onPressed: loading || selectedIndex == null
+                            ? null
+                            : () => deleteSelected(),
+                        icon: const Icon(Icons.delete),
+                        label: const Text('Borrar'),
+                      ),
+                    ],
                   ),
                 ],
               ),

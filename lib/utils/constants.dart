@@ -3,7 +3,7 @@ class Constants {
   //static const String baseUrl = 'http://localhost:8000/api'; // Cambia por tu URL de FastAPI
   // URL base del backend (SIN /api al final)
   //static const String baseUrl = 'http://127.0.0.1:8000';
-  static const String baseUrl = 'http://192.168.18.194:8000';
+  static const String baseUrl = 'http://192.168.1.38:8000';
   //static const String baseUrl = 'http://10.148.228.11:8000';
   //static const String baseUrl = 'http://10.139.134.80:8000';
   static const String apiV1 = '/api/v1';
@@ -18,6 +18,11 @@ class Constants {
   static const String evaluationEndpoint = '$apiV1/evaluations/';
   static const String historyEndpoint = '$apiV1/evaluations/';  // Sin /history
   
+  // Endpoints de calificaciones
+  static const String ratingsEndpoint = '$apiV1/ratings';
+  static const String myRatingEndpoint = '$apiV1/ratings/me';
+
+
   // Health check
   static const String healthEndpoint = '/health';
   
@@ -58,4 +63,6 @@ class Constants {
   static const String hypertensionInfo = 
       'La Hipertensión Arterial (HTA) es una enfermedad silenciosa que ataca '
       'sigilosamente, donde se considera que alguien tiene presión alta cuando:';
+
+  static String apiBaseUrl = baseUrl + apiV1;
 }
